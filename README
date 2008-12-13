@@ -1,0 +1,60 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=2484
+
+*textobj-indent* is a Vim plugin to provide text objects to select a block of
+lines which are similarly indented to the current line.
+
+For example, if the content of a buffer as follows:
+(here ">" means the current line under the cursor,
+and "_" means a space to indent)
+
+	  if some_condition_is_satisfied
+	> __if another_condition_is_satisfied
+	  ____call s:do_x()
+	  __endif
+
+	  __...
+	  __endif
+	  else
+	  __...
+	  endif
+
+|<Plug>(textobj-indent-a)| will select lines as follows:
+(here "|" indicates the selected line)
+
+	  if some_condition_is_satisfied
+	>|__if another_condition_is_satisfied
+	 |____call s:do_x()
+	 |__endif
+	 |
+	 |__...
+	 |__endif
+	  else
+	  __...
+	  endif
+
+|<Plug>(textobj-indent-i)| will select lines as follows:
+
+	  if some_condition_is_satisfied
+	>|__if another_condition_is_satisfied
+	 |____call s:do_x()
+	 |__endif
+
+	  __...
+	  __endif
+	  else
+	  __...
+	  endif
+
+More variants are also available.  See |textobj-indnet-mapping| for the
+details.
+
+
+Requirements:
+- Vim 7.2 or later
+- |textobj-user| 0.3.8 or later (vimscript#2100)
+
+Latest version:
+http://github.com/kana/vim-textobj-indent
+
+Document in HTML format:
+http://kana.github.com/config/vim/textobj-indent.html
