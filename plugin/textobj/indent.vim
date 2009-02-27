@@ -1,5 +1,5 @@
 " textobj-indent - Text objects for lines with the same indentation level
-" Version: 0.0.0
+" Version: 0.0.1
 " Copyright (C) 2008 kana <http://whileimautomaton.net/>
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
@@ -37,7 +37,8 @@ endif
 call textobj#user#plugin('indent', {
 \      '-': {
 \        '*sfile*': expand('<sfile>:p'),
-\        'select': ['ai', 'ii'],  '*select-function*': 's:select',
+\        'select-a': 'ai',  '*select-a-function*': 's:select_a',
+\        'select-i': 'ii',  '*select-i-function*': 's:select_i',
 \      }
 \    })
 
@@ -49,14 +50,14 @@ call textobj#user#plugin('indent', {
 
 
 " Misc.  "{{{1
-" Note: indent level -1 means an empty line.
-function! s:select()  "{{{2
+let s:EMPTY_LINE = -1
+function! s:select(include_empty_lines_p)  "{{{2
   " Check the indentation level of the current or below line.
   let cursor_linenr = line('.')
   let base_linenr = cursor_linenr
   while !0
     let base_indent = s:indent_level_of(base_linenr)
-    if base_indent != -1 || base_linenr == line('$')
+    if base_indent != s:EMPTY_LINE || base_linenr == line('$')
       break
     endif
     let base_linenr += 1
@@ -66,7 +67,7 @@ function! s:select()  "{{{2
   let end_linenr = base_linenr + 1
   while end_linenr <= line('$')
     let end_indent = s:indent_level_of(end_linenr)
-    if end_indent < base_indent && end_indent != -1
+    if s:block_border_p(end_indent, base_indent, a:include_empty_lines_p)
       break
     endif
     let end_linenr += 1
@@ -74,17 +75,43 @@ function! s:select()  "{{{2
   let end_linenr -= 1
 
   " Check the start of a block.
-  let start_linenr = cursor_linenr - 1
+  let start_linenr = base_linenr
   while 1 <= start_linenr
     let start_indent = s:indent_level_of(start_linenr)
-    if start_indent < base_indent && start_indent != -1
+    if s:block_border_p(start_indent, base_indent, a:include_empty_lines_p)
       break
     endif
     let start_linenr -= 1
   endwhile
   let start_linenr += 1
+  if line('$') < start_linenr
+    let start_linenr = line('$')
+  endif
+
+  " Select the cursor line only
+  " if <Plug>(textobj-indent-i) is executed in the last empty lines.
+  if ((!a:include_empty_lines_p)
+  \   && start_linenr == end_linenr
+  \   && start_indent == s:EMPTY_LINE)
+    let start_linenr = cursor_linenr
+    let end_linenr = cursor_linenr
+  endif
 
   return ['V', [0, start_linenr, 1, 0], [0, end_linenr, col(end_linenr), 0]]
+endfunction
+
+
+
+
+function! s:select_a()  "{{{2
+  return s:select(!0)
+endfunction
+
+
+
+
+function! s:select_i()  "{{{2
+  return s:select(!!0)
 endfunction
 
 
@@ -93,10 +120,19 @@ endfunction
 function! s:indent_level_of(linenr)  "{{{2
   let _ = getline(a:linenr)
   if _ == ''
-    return -1
+    return s:EMPTY_LINE
   else
     return len(matchstr(getline(a:linenr), '^\(\s*\)\ze\%(\S\|$\)'))
   endif
+endfunction
+
+
+
+
+function! s:block_border_p(indent, base_indent, include_empty_lines_p)  "{{{2
+  return a:include_empty_lines_p
+  \      ? a:indent != s:EMPTY_LINE && a:indent < a:base_indent
+  \      : a:indent == s:EMPTY_LINE || a:indent < a:base_indent
 endfunction
 
 
